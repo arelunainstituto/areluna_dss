@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSS AreLuna | Decision Support System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body class="dark-theme">
+
+    <div id="app">
+        <!-- Alert Bar -->
+        <div id="alert-bar" class="alert-bar hidden">
+            <div class="alert-content">
+                <span class="alert-icon">⚠️</span>
+                <span id="alert-message">System Alert: Leads connection stable.</span>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header class="glass-header">
+            <div class="logo">
+                <span class="logo-text">AreLuna <span class="accent">DSS</span></span>
+            </div>
+            <nav class="main-nav">
+                <button class="nav-btn active" data-tab="executive">Executivo</button>
+                <button class="nav-btn" data-tab="commercial">Comercial</button>
+                <button class="nav-btn" data-tab="marketing">Marketing</button>
+                <button class="nav-btn" data-tab="operational">Operacional</button>
+            </nav>
+            <div class="status-indicator">
+                <span class="dot live"></span> Updated: <span id="last-update">--:--</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="dashboard-container">
+            
+            <!-- Dashboard Views -->
+            <section id="executive-view" class="dashboard-view active">
+                <div class="kpi-grid" id="executive-kpis">
+                    <!-- KPI Cards injected here -->
+                    <div class="kpi-card loading"></div>
+                    <div class="kpi-card loading"></div>
+                    <div class="kpi-card loading"></div>
+                    <div class="kpi-card loading"></div>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-container glass-panel span-2">
+                        <h3>Evolução de Receita</h3>
+                        <canvas id="exec-revenue-chart"></canvas>
+                    </div>
+                    <div class="chart-container glass-panel">
+                        <h3>Receita por Unidade</h3>
+                        <canvas id="exec-unit-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section id="commercial-view" class="dashboard-view">
+                <div class="kpi-grid" id="commercial-kpis"></div>
+                <div class="charts-grid">
+                     <div class="chart-container glass-panel span-2">
+                        <h3>Funil de Vendas</h3>
+                        <canvas id="comm-funnel-chart"></canvas>
+                    </div>
+                    <div class="chart-container glass-panel">
+                        <h3>Conversão por Vendedor</h3>
+                        <canvas id="comm-conversion-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section id="marketing-view" class="dashboard-view">
+                <div class="kpi-grid" id="marketing-kpis"></div>
+                <div class="charts-grid">
+                    <div class="chart-container glass-panel span-2">
+                        <h3>Leads por Canal</h3>
+                        <canvas id="mkt-source-chart"></canvas>
+                    </div>
+                    <div class="chart-container glass-panel">
+                        <h3>Interesses</h3>
+                        <canvas id="mkt-interest-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section id="operational-view" class="dashboard-view">
+                <div class="kpi-grid" id="operational-kpis"></div>
+                <div class="charts-grid">
+                    <div class="chart-container glass-panel span-2">
+                        <h3>Vendas por Doutor</h3>
+                        <canvas id="ops-doctor-sales-chart"></canvas>
+                    </div>
+                     <div class="chart-container glass-panel">
+                        <h3>Procedimentos por Doutor</h3>
+                        <canvas id="ops-doctor-count-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="lib/chart.min.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/charts/executive.js"></script>
+    <script src="js/charts/commercial.js"></script>
+    <script src="js/charts/marketing.js"></script>
+    <script src="js/charts/operational.js"></script>
+    <script src="js/alerts.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
