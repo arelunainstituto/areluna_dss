@@ -4,6 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "nodemon src/api/server.ts",
+    "build": "tsc",
+    "start": "node dist/src/api/server.js",
+    "trigger": "ts-node src/scripts/manual_trigger.ts",
+    "test:zoho": "ts-node src/scripts/test_zoho_queries.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

@@ -46,13 +46,31 @@ export async function fetchAllRecords(baseQuery: string): Promise<any[]> {
         try {
             const response = await zohoClient.coqlRequest(paginatedQuery);
 
-            // Response structure usually: { data: [ ... ], info: { ... } }
-            // Or sometimes just the array if tailored function.
-            // Based on standard Zoho COQL: { data: [...] }
+            // Zoho Function returns: { code: 'success', details: { output: '{"data":[...]}' } }
+            // The output is a JSON STRING that needs to be parsed
+            let parsedOutput;
 
-            const records = response.data || [];
+            if (response?.details?.output) {
+                try {
+                    parsedOutput = JSON.parse(response.details.output);
+                } catch (parseError) {
+                    console.error('Failed to parse Zoho output:', response.details.output);
+                    throw new Error('Invalid JSON in Zoho response');
+                }
+            } else {
+                parsedOutput = response;
+            }
+
+            // Check for Zoho API errors in the parsed output
+            if (parsedOutput.status === 'error') {
+                throw new Error(`Zoho API Error: ${parsedOutput.message} (${parsedOutput.code})`);
+            }
+
+            // Extract the data array
+            const records = parsedOutput.data || [];
 
             if (!Array.isArray(records)) {
+                console.warn('Unexpected response format:', parsedOutput);
                 throw new Error('Unexpected response format from Zoho COQL: "data" is not an array.');
             }
 

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-PT">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/dashboard.css">
 </head>
+
 <body class="dark-theme">
 
     <div id="app">
@@ -38,7 +40,7 @@
 
         <!-- Main Content -->
         <main class="dashboard-container">
-            
+
             <!-- Dashboard Views -->
             <section id="executive-view" class="dashboard-view active">
                 <div class="kpi-grid" id="executive-kpis">
@@ -63,7 +65,7 @@
             <section id="commercial-view" class="dashboard-view">
                 <div class="kpi-grid" id="commercial-kpis"></div>
                 <div class="charts-grid">
-                     <div class="chart-container glass-panel span-2">
+                    <div class="chart-container glass-panel span-2">
                         <h3>Funil de Vendas</h3>
                         <canvas id="comm-funnel-chart"></canvas>
                     </div>
@@ -92,11 +94,11 @@
                 <div class="kpi-grid" id="operational-kpis"></div>
                 <div class="charts-grid">
                     <div class="chart-container glass-panel span-2">
-                        <h3>Vendas por Doutor</h3>
+                        <h3>Vendas por Gestor</h3>
                         <canvas id="ops-doctor-sales-chart"></canvas>
                     </div>
-                     <div class="chart-container glass-panel">
-                        <h3>Procedimentos por Doutor</h3>
+                    <div class="chart-container glass-panel">
+                        <h3>Procedimentos por Gestor</h3>
                         <canvas id="ops-doctor-count-chart"></canvas>
                     </div>
                 </div>
@@ -114,4 +116,5 @@
     <script src="js/alerts.js"></script>
     <script src="js/app.js"></script>
 </body>
+
 </html>

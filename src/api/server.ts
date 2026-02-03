@@ -26,7 +26,8 @@ app.use('/api/alerts', alertsRoutes);
 app.use('/api/metrics', metricsRoutes);
 
 // Fallback for SPA (if we had client-side routing, but we have simple index.html)
-app.get('*', (req, res) => {
+// Fallback for SPA (if we had client-side routing, but we have simple index.html)
+app.get(/(.*)/, (req, res) => {
     res.sendFile(path.join(__dirname, '../../frontend/index.html'));
 });
 

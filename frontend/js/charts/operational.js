@@ -4,8 +4,8 @@ const OperationalCharts = {
 
     render(data) {
         this.updateKPIs(data.primary);
-        this.renderDoctorSalesChart(data.primary.salesByDoctor);
-        this.renderDoctorCountChart(data.primary.countByDoctor);
+        this.renderDoctorSalesChart(data.primary.salesByOwner);
+        this.renderDoctorCountChart(data.primary.countByOwner);
     },
 
     updateKPIs(metrics) {
@@ -14,18 +14,18 @@ const OperationalCharts = {
         // Ops might not have specific KPIs in O1-O4 that are scalar, mostly breakdowns.
         // We can show top doctor or total sales.
 
-        let topDoctor = '-';
+        let topOwner = '-';
         let maxSales = 0;
-        if (metrics.salesByDoctor) {
-            Object.entries(metrics.salesByDoctor).forEach(([doc, val]) => {
-                if (Number(val) > maxSales) { maxSales = Number(val); topDoctor = doc; }
+        if (metrics.salesByOwner) {
+            Object.entries(metrics.salesByOwner).forEach(([owner, val]) => {
+                if (Number(val) > maxSales) { maxSales = Number(val); topOwner = owner; }
             });
         }
 
         container.innerHTML = `
             <div class="kpi-card">
-                <span class="kpi-title">Top Doutor (Vendas)</span>
-                <span class="kpi-value" style="font-size: 1.5rem">${topDoctor}</span>
+                <span class="kpi-title">Top Gestor (Vendas)</span>
+                <span class="kpi-value" style="font-size: 1.5rem">${topOwner}</span>
                 <span class="kpi-trend positive">${Utils.formatCurrency(maxSales)}</span>
             </div>
         `;

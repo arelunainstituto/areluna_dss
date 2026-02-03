@@ -136,22 +136,27 @@ export const DashboardService = {
     async getOperationalMetrics() {
         const wonDeals = await DealExtractor.getWonDealsCurrentMonth();
 
-        // O1: Sales by Doctor
-        const O1_SalesByDoctor = wonDeals.reduce((acc: any, d) => {
-            const doc = d.Doutor_Respons_vel || 'Unknown';
-            // Normalize if object
-            const docName = typeof doc === 'object' && doc.name ? doc.name : String(doc);
-            acc[docName] = (acc[docName] || 0) + parseFloat(d.Amount || 0);
+        // Use manual owner mapping
+        const { getOwnerName } = await import('../config/ownerMapping');
+
+        // O1: Sales by Owner (Manager)
+        const O1_SalesByOwner = wonDeals.reduce((acc: any, d) => {
+            const ownerName = getOwnerName(d.Owner);
+            acc[ownerName] = (acc[ownerName] || 0) + parseFloat(d.Amount || 0);
             return acc;
         }, {});
 
-        // O2: Qtd Deals by Doctor
-        const O2_CountByDoctor = countBy(wonDeals, 'Doutor_Respons_vel');
+        // O2: Qtd Deals by Owner (Manager)
+        const O2_CountByOwner = wonDeals.reduce((acc: any, d) => {
+            const ownerName = getOwnerName(d.Owner);
+            acc[ownerName] = (acc[ownerName] || 0) + 1;
+            return acc;
+        }, {});
 
         return {
             primary: {
-                salesByDoctor: O1_SalesByDoctor,
-                countByDoctor: O2_CountByDoctor,
+                salesByOwner: O1_SalesByOwner,
+                countByOwner: O2_CountByOwner,
             }
         }
     }

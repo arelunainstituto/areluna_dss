@@ -1,0 +1,116 @@
+/**
+ * ZOHO DELUGE FUNCTION - Enhanced Version
+ * 
+ * This function enhances the original COQL function by adding owner name lookups.
+ * 
+ * INSTRUCTIONS TO UPDATE YOUR ZOHO FUNCTION:
+ * 
+ * 1. Go to Zoho CRM > Setup > Functions
+ * 2. Find your existing COQL function
+ * 3. Replace the code with the version below
+ * 4. Save and test
+ * 
+ * This enhanced version will:
+ * - Execute the COQL query as before
+ * - Extract all Owner IDs from the results
+ * - Fetch User names for those IDs
+ * - Add an "Owner_Name" field to each record
+ */
+
+// ============================================
+// ZOHO DELUGE CODE (Copy everything below)
+// ============================================
+
+/*
+
+// Get the COQL query from arguments
+consulta = arguments.get("consulta");
+
+// Execute the COQL query
+response = zoho.crm.invokeConnector("crm.coql", consulta);
+
+// Check if we got data
+if(response.get("data") != null && response.get("data").size() > 0)
+{
+    data = response.get("data");
+    
+    // Extract unique owner IDs
+    ownerIds = List();
+    for each record in data
+    {
+        owner = record.get("Owner");
+        if(owner != null && owner.get("id") != null)
+        {
+            ownerId = owner.get("id").toString();
+            if(!ownerIds.contains(ownerId))
+            {
+                ownerIds.add(ownerId);
+            }
+        }
+    }
+    
+    // Fetch user names for all owner IDs
+    ownerNames = Map();
+    if(ownerIds.size() > 0)
+    {
+        for each ownerId in ownerIds
+        {
+            try
+            {
+                userResp = zoho.crm.getRecordById("users", ownerId.toLong());
+                if(userResp != null)
+                {
+                    fullName = userResp.get("full_name");
+                    if(fullName == null)
+                    {
+                        fullName = userResp.get("name");
+                    }
+                    if(fullName == null)
+                    {
+                        fullName = userResp.get("email");
+                    }
+                    if(fullName != null)
+                    {
+                        ownerNames.put(ownerId, fullName);
+                    }
+                }
+            }
+            catch (e)
+            {
+                // If user fetch fails, continue with next
+                info "Failed to fetch user: " + ownerId;
+            }
+        }
+    }
+    
+    // Add Owner_Name to each record
+    enrichedData = List();
+    for each record in data
+    {
+        owner = record.get("Owner");
+        if(owner != null && owner.get("id") != null)
+        {
+            ownerId = owner.get("id").toString();
+            ownerName = ownerNames.get(ownerId);
+            if(ownerName != null)
+            {
+                record.put("Owner_Name", ownerName);
+            }
+        }
+        enrichedData.add(record);
+    }
+    
+    // Return enriched data
+    return {"data": enrichedData, "info": response.get("info")};
+}
+else
+{
+    // No data or error
+    return response;
+}
+
+*/
+
+// ============================================
+// END OF ZOHO DELUGE CODE
+// ============================================
