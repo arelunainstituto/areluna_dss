@@ -23,7 +23,7 @@ class ZohoClient {
         urlObj.searchParams.append('arguments', argumentValue);
 
         try {
-            const response = await axios.get(urlObj.toString());
+            const response = await axios.get(urlObj.toString(), { timeout: 30000 });
 
             // The response structure from a custom function usually contains "details.output" stringified or direct JSON
             // We'll need to parse it based on the specific return format of 'leads_report'.

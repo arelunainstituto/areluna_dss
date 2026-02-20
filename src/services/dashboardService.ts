@@ -2,6 +2,8 @@ import { LeadExtractor } from '../extractors/leadExtractor';
 import { DealExtractor } from '../extractors/dealExtractor';
 import { supabase } from '../config/supabase';
 import { countBy, sum, average } from '../utils/aggregator';
+import { normalizeInterest } from '../utils/normalizeInterest';
+import { getOwnerName } from '../config/ownerMapping';
 import dayjs from 'dayjs';
 
 export const DashboardService = {
@@ -62,31 +64,46 @@ export const DashboardService = {
      * C1-C7, C10 (Realtime) + C8, C9, C11 (History)
      */
     async getCommercialMetrics() {
-        // Realtime
-        const dealsMonth = await DealExtractor.getDealsCreatedCurrentMonth(); // For conversion calc base? Or all deals closed this month?
+        // Buscar leads com videochamada para taxa de conversão
+        const leadsWithVideo = await LeadExtractor.getLeadsWithVideoCall();
+
+        // Filtrar leads convertidos (aqueles que têm Converted_Date_Time preenchido)
+        const convertedLeadsWithVideo = leadsWithVideo.filter(lead =>
+            lead.Converted_Date_Time != null && lead.Converted_Date_Time !== ''
+        );
+
+        // C1: Taxa de Conversão Global (Leads convertidos / Leads com videochamada)
+        const totalWithVideo = leadsWithVideo.length;
+        const convertedWithVideo = convertedLeadsWithVideo.length;
+        const C1_ConversionRate = totalWithVideo > 0
+            ? (convertedWithVideo / totalWithVideo) * 100
+            : 0;
+
+        // C2: Taxa de Conversão por Vendedor
+        const videoByOwner: Record<string, number> = {};
+        const convertedByOwner: Record<string, number> = {};
+
+        for (const lead of leadsWithVideo) {
+            const ownerName = await getOwnerName(lead.Owner);
+            videoByOwner[ownerName] = (videoByOwner[ownerName] || 0) + 1;
+        }
+
+        for (const lead of convertedLeadsWithVideo) {
+            const ownerName = await getOwnerName(lead.Owner);
+            convertedByOwner[ownerName] = (convertedByOwner[ownerName] || 0) + 1;
+        }
+
+        const C2_ConversionByOwner: Record<string, number> = {};
+        Object.keys(videoByOwner).forEach(owner => {
+            const total = videoByOwner[owner];
+            const converted = convertedByOwner[owner] || 0;
+            C2_ConversionByOwner[owner] = total > 0 ? (converted / total) * 100 : 0;
+        });
+
+        // Manter métricas de deals para outras visualizações
         const wonDeals = await DealExtractor.getWonDealsCurrentMonth();
         const lostDeals = await DealExtractor.getLostDealsCurrentMonth();
         const openDeals = await DealExtractor.getOpenPipeline();
-
-        // C1: Conversion Rate Global (Won / (Won + Lost) or Won / Created? Usually Won / Closed)
-        const closedCount = wonDeals.length + lostDeals.length;
-        const C1_ConversionRate = closedCount > 0 ? (wonDeals.length / closedCount) * 100 : 0;
-
-        // C2: Conversion per Owner
-        // Need to group won and lost by owner
-        const wonByOwner = countBy(wonDeals, 'Owner');
-        const lostByOwner = countBy(lostDeals, 'Owner');
-        // Merge keys
-        const owners = new Set([...Object.keys(wonByOwner), ...Object.keys(lostByOwner)]);
-        const C2_ConversionByOwner: Record<string, number> = {};
-        owners.forEach(o => {
-            const w = wonByOwner[o] || 0;
-            const l = lostByOwner[o] || 0;
-            const total = w + l;
-            C2_ConversionByOwner[o] = total > 0 ? (w / total) * 100 : 0;
-        });
-
-        // C4: Funnel (Deals by Stage)
         const C4_Funnel = countBy(openDeals, 'Stage');
 
         return {
@@ -96,7 +113,10 @@ export const DashboardService = {
                 funnel: C4_Funnel,
                 dealsWon: wonDeals.length,
                 dealsLost: lostDeals.length,
-                dealsOpen: openDeals.length
+                dealsOpen: openDeals.length,
+                // Novas métricas para contexto
+                leadsWithVideo: totalWithVideo,
+                leadsConverted: convertedWithVideo
             }
         }
     },
@@ -113,11 +133,16 @@ export const DashboardService = {
         const M1_LeadsToday = leadsToday.length;
         const M1_LeadsMonth = leadsMonth.length;
 
-        // M2: Leads by Channel
-        const M2_BySource = countBy(leadsMonth, 'Lead_Source');
+        // M2: Leads by Channel - Normalize before counting
+        const { normalizeLeadSource } = await import('../utils/normalizeLeadSource');
+        const leadsWithNormalizedSource = leadsMonth.map(lead => ({
+            ...lead,
+            Lead_Source_Normalized: normalizeLeadSource(lead.Lead_Source)
+        }));
+        const M2_BySource = countBy(leadsWithNormalizedSource, 'Lead_Source_Normalized');
 
         // M3: Leads by Interest
-        const M3_ByInterest = countBy(leadsMonth, 'Interesses');
+        const M3_ByInterest = countBy(leadsMonth, 'Interesses', normalizeInterest);
 
         return {
             primary: {
@@ -135,28 +160,37 @@ export const DashboardService = {
      */
     async getOperationalMetrics() {
         const wonDeals = await DealExtractor.getWonDealsCurrentMonth();
+        const leadsMonth = await LeadExtractor.getLeadsByOwnerCurrentMonth();
 
-        // Use manual owner mapping
+        // Use owner name extraction with API lookup fallback
         const { getOwnerName } = await import('../config/ownerMapping');
 
         // O1: Sales by Owner (Manager)
-        const O1_SalesByOwner = wonDeals.reduce((acc: any, d) => {
-            const ownerName = getOwnerName(d.Owner);
-            acc[ownerName] = (acc[ownerName] || 0) + parseFloat(d.Amount || 0);
-            return acc;
-        }, {});
+        const O1_SalesByOwner: Record<string, number> = {};
+        for (const d of wonDeals) {
+            const ownerName = await getOwnerName(d.Owner);
+            O1_SalesByOwner[ownerName] = (O1_SalesByOwner[ownerName] || 0) + parseFloat(d.Amount || 0);
+        }
 
         // O2: Qtd Deals by Owner (Manager)
-        const O2_CountByOwner = wonDeals.reduce((acc: any, d) => {
-            const ownerName = getOwnerName(d.Owner);
-            acc[ownerName] = (acc[ownerName] || 0) + 1;
-            return acc;
-        }, {});
+        const O2_CountByOwner: Record<string, number> = {};
+        for (const d of wonDeals) {
+            const ownerName = await getOwnerName(d.Owner);
+            O2_CountByOwner[ownerName] = (O2_CountByOwner[ownerName] || 0) + 1;
+        }
+
+        // O3: Qtd Leads by Owner (Manager)
+        const O3_LeadsByOwner: Record<string, number> = {};
+        for (const lead of leadsMonth) {
+            const ownerName = await getOwnerName(lead.Owner);
+            O3_LeadsByOwner[ownerName] = (O3_LeadsByOwner[ownerName] || 0) + 1;
+        }
 
         return {
             primary: {
                 salesByOwner: O1_SalesByOwner,
                 countByOwner: O2_CountByOwner,
+                leadsByOwner: O3_LeadsByOwner,
             }
         }
     }

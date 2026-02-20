@@ -1,16 +1,26 @@
 
 /**
  * Groups an array of objects by a specific key and counts occurrences.
+ * @param data - Array of objects to group
+ * @param key - Key to group by
+ * @param transform - Optional function to transform the value before grouping
  */
-export function countBy(data: any[], key: string): Record<string, number> {
+export function countBy(
+    data: any[],
+    key: string,
+    transform?: (value: any) => any
+): Record<string, number> {
     return data.reduce((acc, item) => {
-        const value = item[key] ?? 'Unknown';
+        let value = item[key] ?? 'Unknown';
         // If it's a Zoho lookup object (e.g. Owner: {name: "...", id: "..."}), use the name
         const label = typeof value === 'object' && value !== null && value.name
             ? value.name
             : String(value);
 
-        acc[label] = (acc[label] || 0) + 1;
+        // Apply transformation if provided
+        const finalLabel = transform ? transform(label) : label;
+
+        acc[finalLabel] = (acc[finalLabel] || 0) + 1;
         return acc;
     }, {});
 }

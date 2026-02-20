@@ -1,6 +1,8 @@
 import { LeadExtractor } from '../extractors/leadExtractor';
 import { DealExtractor } from '../extractors/dealExtractor';
 import { countBy, sumByGroup, sum, average } from '../utils/aggregator';
+import { normalizeInterest } from '../utils/normalizeInterest';
+import { normalizeLeadSource } from '../utils/normalizeLeadSource';
 import { supabase } from '../config/supabase';
 import dayjs from 'dayjs';
 
@@ -12,10 +14,14 @@ export const SnapshotBuilder = {
         console.log('Building Lead Snapshot...');
         const todayLeads = await LeadExtractor.getLeadsCreatedToday();
 
-        // Aggregations
+        // Aggregations - Normalize Lead_Source before counting
         const total_leads = todayLeads.length;
-        const leads_by_source = countBy(todayLeads, 'Lead_Source');
-        const leads_by_interest = countBy(todayLeads, 'Interesses');
+        const leadsWithNormalizedSource = todayLeads.map(lead => ({
+            ...lead,
+            Lead_Source_Normalized: normalizeLeadSource(lead.Lead_Source)
+        }));
+        const leads_by_source = countBy(leadsWithNormalizedSource, 'Lead_Source_Normalized');
+        const leads_by_interest = countBy(todayLeads, 'Interesses', normalizeInterest);
         const leads_by_unit = countBy(todayLeads, 'Unidade_Atendimento');
         const leads_by_status = countBy(todayLeads, 'Lead_Status');
         const leads_by_country = countBy(todayLeads, 'Country'); // or Em_que_pa_s_voc_mora
@@ -76,15 +82,18 @@ export const SnapshotBuilder = {
 
         const snapshot = {
             snapshot_date: today,
-            // Won
+            // Won - Normalize Lead_Source
             won_count: wonDealsToday.length,
             won_amount: sum(wonDealsToday, 'Amount'),
             won_entrada: sum(wonDealsToday, 'Valor_de_Entrada'),
-            won_by_interest: countBy(wonDealsToday, 'Interesses'),
+            won_by_interest: countBy(wonDealsToday, 'Interesses', normalizeInterest),
             won_by_unit: countBy(wonDealsToday, 'Unidade_Atendimento'),
             won_by_doctor: countBy(wonDealsToday, 'Doutor_Respons_vel'),
             won_by_owner: countBy(wonDealsToday, 'Owner'),
-            won_by_source: countBy(wonDealsToday, 'Lead_Source'),
+            won_by_source: countBy(
+                wonDealsToday.map(d => ({ ...d, Lead_Source_Normalized: normalizeLeadSource(d.Lead_Source) })),
+                'Lead_Source_Normalized'
+            ),
 
             // Lost
             lost_count: lostDealsToday.length,

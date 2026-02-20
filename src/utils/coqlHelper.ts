@@ -44,6 +44,9 @@ export async function fetchAllRecords(baseQuery: string): Promise<any[]> {
         const paginatedQuery = `${baseQuery} LIMIT ${MAX_RECORDS_PER_PAGE} OFFSET ${offset}`;
 
         try {
+            // Yield to event loop to prevent blocking server during large fetches
+            if (loopCount % 5 === 0) await new Promise(resolve => setImmediate(resolve));
+
             const response = await zohoClient.coqlRequest(paginatedQuery);
 
             // Zoho Function returns: { code: 'success', details: { output: '{"data":[...]}' } }
@@ -74,7 +77,11 @@ export async function fetchAllRecords(baseQuery: string): Promise<any[]> {
                 throw new Error('Unexpected response format from Zoho COQL: "data" is not an array.');
             }
 
-            allRecords = allRecords.concat(records);
+            // Optimization: avoid concat (O(N^2) behavior for large arrays)
+            // Use push with spread
+            if (records.length > 0) {
+                allRecords.push(...records);
+            }
 
             if (records.length < MAX_RECORDS_PER_PAGE) {
                 hasMore = false;
@@ -84,6 +91,9 @@ export async function fetchAllRecords(baseQuery: string): Promise<any[]> {
 
         } catch (error) {
             console.error(`Error fetching page at offset ${offset}:`, error);
+            // If request fails (timeout or network), stop fetching further pages but return what we have?
+            // Or throw? Given dashboard context, better to return partial data or fail gracefully?
+            // Throwing is safer to indicate failure.
             throw error;
         }
     }
