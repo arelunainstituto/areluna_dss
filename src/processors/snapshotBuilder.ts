@@ -5,6 +5,11 @@ import { normalizeInterest } from '../utils/normalizeInterest';
 import { normalizeLeadSource } from '../utils/normalizeLeadSource';
 import { supabase } from '../config/supabase';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export const SnapshotBuilder = {
     /**
@@ -27,18 +32,17 @@ export const SnapshotBuilder = {
         const leads_by_country = countBy(todayLeads, 'Country'); // or Em_que_pa_s_voc_mora
         const avg_cost_per_conversion = average(todayLeads, 'Cost_per_Conversion');
 
-        // Converted leads (Created_Time = today AND Converted = true? Or Converted_Time = today?)
-        // Prompt Q-L9 implies Converted_Date_Time. 
-        // Usually "Daily Lead Snapshot" tracks leads *created* today, but conversion count might be "Leads converted today" regardless of creation.
-        // However, the prompt field is "converted_count". Let's assume it means "Leads converted today".
-        const convertedLeads = await LeadExtractor.getConvertedLeadsCurrentMonth(); // This gets month. We need today.
-        // Filter for today
-        const startOfToday = dayjs().startOf('day');
-        const convertedToday = convertedLeads.filter(l => dayjs(l.Converted_Date_Time).isAfter(startOfToday));
+        // Converted leads
+        const convertedLeads = await LeadExtractor.getConvertedLeadsCurrentMonth();
+        const todayStr = dayjs().tz(process.env.TIMEZONE || 'Europe/Lisbon').format('YYYY-MM-DD');
+        const convertedToday = convertedLeads.filter(l => {
+            if (!l.Converted_Date_Time) return false;
+            return dayjs(l.Converted_Date_Time).tz(process.env.TIMEZONE || 'Europe/Lisbon').format('YYYY-MM-DD') === todayStr;
+        });
         const converted_count = convertedToday.length;
 
         const snapshot = {
-            snapshot_date: dayjs().format('YYYY-MM-DD'),
+            snapshot_date: todayStr,
             total_leads,
             leads_by_source,
             leads_by_interest,
@@ -64,10 +68,10 @@ export const SnapshotBuilder = {
     async buildDealSnapshot() {
         console.log('Building Deal Snapshot...');
 
-        // Won Deals Today (using Q-D2 month logic and filtering, or specific query?)
-        // DealExtractor.getWonDealsCurrentMonth fetches month. We filter for today.
+        const today = dayjs().tz(process.env.TIMEZONE || 'Europe/Lisbon').format('YYYY-MM-DD');
+
+        // Won Deals Today
         const wonDealsMonth = await DealExtractor.getWonDealsCurrentMonth();
-        const today = dayjs().format('YYYY-MM-DD');
         const wonDealsToday = wonDealsMonth.filter(d => d.Closing_Date === today);
 
         // Lost Deals Today
