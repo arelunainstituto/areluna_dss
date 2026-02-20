@@ -25,6 +25,7 @@
   "homepage": "https://github.com/arelunainstituto/areluna_dss#readme",
   "dependencies": {
     "@supabase/supabase-js": "^2.93.3",
+    "@vercel/node": "^5.6.6",
     "axios": "^1.13.4",
     "chart.js": "^4.5.1",
     "cors": "^2.8.6",
